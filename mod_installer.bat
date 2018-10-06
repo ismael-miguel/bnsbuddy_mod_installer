@@ -171,7 +171,7 @@ IF ERRORLEVEL 3 (
 	) ELSE (
 		echo Extracting !ext! mod into "!modname!"
 		
-		call :extactfile "!filepath!!filename!" "!MODFOLDER!!modname!"
+		call :extactfile "!filepath!!filename!" "!MODFOLDER!!modname!\"
 		IF ERRORLEVEL 3 (
 			call :colorecho "No suitable extraction program found" darkred black
 		) ELSE IF ERRORLEVEL 2 (
@@ -351,12 +351,12 @@ set "filename=%~n1"
 
 set "target=%~dp2\"
 IF "!target!" EQU "" (
-	SET "target=!folder!\"
+	SET "target=!folder!!filename!\"
 )
 
 IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	REM https://stackoverflow.com/q/14122732
-	"%ProgramFiles%\7-Zip\7z.exe" e "!folder!!file!" -bd -y -o"!target!!filename!\" >nul 2>&1
+	"%ProgramFiles%\7-Zip\7z.exe" e "!folder!!file!" -bd -y -o"!target!\" >nul 2>&1
 	IF ERRORLEVEL 1 (
 		exit /b 2
 	) ELSE (
@@ -364,7 +364,7 @@ IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	)
 ) ELSE IF EXIST "%ProgramFiles%\WinRAR\winrar.exe" (
 	REM https://stackoverflow.com/a/19337595
-	"%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!!filename!\" >nul 2>&1
+	"%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\" >nul 2>&1
 	IF ERRORLEVEL 1 (
 		exit /b 2
 	) ELSE (
