@@ -356,7 +356,7 @@ IF "!target!" EQU "" (
 
 IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	REM https://stackoverflow.com/q/14122732
-	"%ProgramFiles%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!!filename!\" >nul 2>&1
+	"%ProgramFiles%\7-Zip\7z.exe" e "!folder!!file!" -bd -y -o"!target!!filename!\" >nul 2>&1
 	IF ERRORLEVEL 1 (
 		exit /b 2
 	) ELSE (
