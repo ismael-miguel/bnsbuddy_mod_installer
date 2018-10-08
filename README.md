@@ -12,6 +12,7 @@ Automatically creates a mod folder for .upk or .umap files.
     - `HKEY_LOCAL_MACHINE\SOFTWARE\NCWest\BnS` (value `BaseDir`) for 32-bit Windows
     - `HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\NCWest\BnS` (value `BaseDir`) for 64-bit Windows
 - To make even easier, you can place this file inside BnSBuddy's folder (will read `Settings.ini` when available)
+- You ***MUST*** have [7-Zip](https://www.7-zip.org/) or [Winrar](https://www.win-rar.com/) for it to work with .zip, .7z or .rar files. If you get errors, try updating it first.
 
 
 ## How to use?
