@@ -295,7 +295,7 @@ setlocal EnableDelayedExpansion
 
 REM https://stackoverflow.com/a/50115044
 REM fix for dialog not showing: https://stackoverflow.com/q/216710
-set cmd=powershell -NoProfile -Noninteractive -NoLogo -command "&{[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms')|Out-Null; $F = New-Object System.Windows.Forms.OpenFileDialog; $F.ShowHelp = $true; $F.filter = 'ZIP Archive (*.zip)| *.zip|Rar Archive (*.rar)| *.rar|UPK File (*.upk)| *.upk|UMAP File (*.umap)| *.rar|All files| *.*'; $F.ShowDialog()|Out-Null; $F.FileName}"
+set cmd=powershell -NoProfile -Noninteractive -NoLogo -command "&{[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms')|Out-Null; $F = New-Object System.Windows.Forms.OpenFileDialog; $F.ShowHelp = $true; $F.filter = 'ZIP Archive (*.zip)| *.zip|7-Zip Archive (*.7z)| *.7z|Rar Archive (*.rar)| *.rar|UPK File (*.upk)| *.upk|UMAP File (*.umap)| *.rar|All files| *.*'; $F.ShowDialog()|Out-Null; $F.FileName}"
 
 for /f "delims=" %%i in ('!cmd!') do (
 	set "file=%%i"
