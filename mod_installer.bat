@@ -118,7 +118,7 @@ IF ERRORLEVEL 3 (
 		set "filepath=%%~dpf"
 	)
 	
-	FOR %%e IN (".upk" ".umap" ".zip" ".rar") DO (
+	FOR %%e IN (".upk" ".umap" ".zip" ".7z" ".rar") DO (
 		IF /I %%e EQU "!ext!" (
 			set "ext=%%e"
 			set "ext=!ext:"=!"
@@ -165,7 +165,7 @@ IF ERRORLEVEL 3 (
 		copy "!filepath!!filename!" "!MODFOLDER!!modname!\!filename!" /b /y >nul 2>&1
 		
 		echo Creating description.txt
-		echo Mod !modname! contains !filename!, created with Mod Creator > "!MODFOLDER!!modname!\description.txt"
+		echo Mod !modname! contains !filename!, created with Mod Installer > "!MODFOLDER!!modname!\description.txt"
 		
 		call :colorecho "Mod !modname! installed successfully" darkgreen black
 	) ELSE (
@@ -182,7 +182,7 @@ IF ERRORLEVEL 3 (
 			REM creates the description file, if none is provided
 			IF NOT EXIST "!MODFOLDER!!modname!\description.txt" (
 				echo Creating description.txt
-				echo Mod !modname! created with Mod Creator > "!MODFOLDER!!modname!\description.txt"
+				echo Mod !modname! created with Mod Installer > "!MODFOLDER!!modname!\description.txt"
 			)
 			
 			call :colorecho "Mod !modname! installed successfully" darkgreen black
