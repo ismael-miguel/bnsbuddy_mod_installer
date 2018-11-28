@@ -339,6 +339,7 @@ goto :eof
 REM extracts the file with 7-zip or winrar, whichever is available
 REM %1 = file to extract, %2 = optional target for extraction
 REM exit: 0 = extracted, 1 = not found, 2 = failed, 3 = no program
+REM return: extraction target folder path (for error code 0)
 setlocal EnableDelayedExpansion
 
 IF NOT EXIST %1 (
@@ -358,18 +359,23 @@ IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	REM https://stackoverflow.com/q/14122732
 	"%ProgramFiles%\7-Zip\7z.exe" e "!folder!!file!" -bd -y -o"!target!\" >nul 2>&1
 	IF ERRORLEVEL 1 (
+		endlocal & set "extactfile="
 		exit /b 2
 	) ELSE (
+		endlocal & set "extactfile=%target%"
 		exit /b 0
 	)
 ) ELSE IF EXIST "%ProgramFiles%\WinRAR\winrar.exe" (
 	REM https://stackoverflow.com/a/19337595
 	"%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\" >nul 2>&1
 	IF ERRORLEVEL 1 (
+		endlocal & set "extactfile="
 		exit /b 2
 	) ELSE (
+		endlocal & set "extactfile=%target%"
 		exit /b 0
 	)
 )
 
+endlocal & set "extactfile="
 exit /b 3
