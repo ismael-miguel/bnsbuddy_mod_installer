@@ -15,57 +15,76 @@ REM needs administrator rights - https://stackoverflow.com/a/21295806
 REM we run fsutil to check the error code. 0 = admin
 fsutil dirty query %SystemDrive% >nul 2>&1
 IF NOT %ERRORLEVEL% EQU 0 (
-	call :kill 1 "You need to execute as administrator"
+	powershell -NoProfile -Noninteractive -NoLogo Start-Process ""%0"" -Verb runas >nul 2>&1
+	IF ERRORLEVEL 1 (
+		call :kill 1 "You need to execute as administrator"
+	) ELSE (
+		exit /b 0
+	)
 )
 
 REM tries to load the settings.ini file and get the custom mod path
 IF EXIST "%~dp0/Settings.ini" (
 	for /f "usebackq tokens=1* delims==" %%a in ("%~dp0/Settings.ini") do (
-		if "%%a" EQU "modfolder " (
-			set "MODFOLDER=%%b"
-			set "MODFOLDER=!MODFOLDER: =!"
+		for /f "tokens=* delims= " %%b in ("%%b") do set "value=%%b"
+		set "key=%%a"
+		
+		IF "!key!" EQU "modfolder " (
+			REM set "MODFOLDER=!value: =!"
+			set "MODFOLDER=!value!"
+		) ELSE IF "!key!" EQU "customgamepath " (
+			REM set "GAMEFOLDER=!value: =!"
+			set "GAMEFOLDER=!value!"
+			set "GAMEMODFOLDER=!GAMEFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC\mod"
+		) ELSE IF "!key!" EQU "default " (
+			IF NOT "!value!" EQU "" (
+				REM set "GAMEFOLDER=!value: =!"
+				set "GAMEFOLDER=!value!"
+				set "GAMEMODFOLDER=!GAMEFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC\mod"
+			)
 		)
 	)
 )
 
-REM tries to get the default path if it wasnt possible to read from settings.ini
-IF "!MODFOLDER!" EQU "" (
-	REM detect the bitness - https://superuser.com/a/268384
-	echo %PROCESSOR_ARCHITECTURE% | find /i "x86" >nul
-	IF ERRORLEVEL 1 (
-		set WIN_BITS=64
-		set REGKEY="HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\NCWest\BnS"
-	) ELSE (
-		set WIN_BITS=32
-		set REGKEY="HKEY_LOCAL_MACHINE\SOFTWARE\NCWest\BnS"
-	)
+REM tries to get the game path from the registry
+set "REGFOLDER="
+REM detect the bitness - https://superuser.com/a/268384
+echo %PROCESSOR_ARCHITECTURE% | find /i "x86" >nul
+IF ERRORLEVEL 1 (
+	set WIN_BITS=64
+	set REGKEY="HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\NCWest\BnS"
+) ELSE (
+	set WIN_BITS=32
+	set REGKEY="HKEY_LOCAL_MACHINE\SOFTWARE\NCWest\BnS"
+)
 
-	REM this key is required - https://stackoverflow.com/a/445323
-	REM we check if it exists before trying to run the code
-	REG QUERY !REGKEY! >nul 2>&1
-	IF ERRORLEVEL 1 (
-		call :colorecho "Registry key !REGKEY! not found" red black
-		call :pause "Press any key to select the Mod folder"
-		call :getfolder "Select the Mod folder"
+REM this key is required - https://stackoverflow.com/a/445323
+REM we check if it exists before trying to run the code
+REG QUERY !REGKEY! >nul 2>&1
+IF ERRORLEVEL 1 (
+	call :colorecho "Registry key !REGKEY! not found, mod installation disabled" red black
+) ELSE (
+	REM fetches the data in the registry
+	for /f "tokens=2*" %%a in ('REG QUERY !REGKEY! /v BaseDir') do set "REGFOLDER=%%~b"
+
+	IF NOT EXIST "!REGFOLDER!" (
+		call :colorecho "!MODFOLDER! does not exist or is empty" red black
+	)
+)
+
+REM sets the default path if it wasnt possible to read from settings.ini
+IF "!MODFOLDER!" EQU "" (
+	IF "!REGFOLDER!" EQU "" (
+		call :colorecho "Mod folder could not be determinated automatically" red black
+		call :pause "Press any key to select the BnSBuddy Mod folder"
+		call :getfolder "Select the BnSBuddy Mod folder"
 		
 		IF [!getfolder!] EQU [] (
 			call :kill 1 "Folder selection canceled"
 		)
 		set "MODFOLDER=!getfolder!\"
 	) ELSE (
-		REM fetches the data in the registry
-		for /f "tokens=2*" %%a in ('REG QUERY !REGKEY! /v BaseDir') do set "MODFOLDER=%%~b\contents\Local\NCWEST\ENGLISH\CookedPC_Mod\"
-
-		IF NOT EXIST "!MODFOLDER!" (
-			call :colorecho "!MODFOLDER! does not exist or is empty" red black
-			call :pause "Press any key to select the Mod folder"
-			call :getfolder "Select the Mod folder"
-			
-			IF [!getfolder!] EQU [] (
-				call :kill 1 "Folder selection canceled"
-			)
-			set "MODFOLDER=!getfolder!\"
-		)
+		set "MODFOLDER=!REGFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC_Mod\"
 	)
 )
 
@@ -82,17 +101,36 @@ cls
 call :colorecho "BnS Mod installer" black gray
 echo Installs mods into BnSBuddy Mod folder
 call :line
+IF NOT "!REGFOLDER!" EQU "" (
+	echo Game folder: !REGFOLDER!
+)
+IF NOT "!GAMEMODFOLDER!" EQU "" (
+	echo Game Mod folder: !GAMEMODFOLDER!
+)
 echo Mod folder: !MODFOLDER!
 call :line
 
 :choice
 echo What to do next?
-choice /c:qim /n /m "[Q]uit | [I]nstall Mod | [M]od folder"
+choice /c:qibg /n /m "[Q]uit | [I]nstall Mod | [B]nSBuddy Mod folder | [G]ame Mod folder"
 
-IF ERRORLEVEL 3 (
-	REM [M]od folder
+IF ERRORLEVEL 4 (
+	REM [G]ame folder
 	
-	call :getfolder "Select Mob folder"
+	call :getfolder "Select Game Mod folder"
+	
+	IF [!getfolder!] EQU [] (
+		call :colorecho "Folder selection canceled" darkyellow black
+		goto choice
+	) ELSE (
+		set "GAMEMODFOLDER=!getfolder!\"
+		goto start
+	)
+	
+) ELSE IF ERRORLEVEL 3 (
+	REM [B]nSBuddy Mod folder
+	
+	call :getfolder "Select BnSBuddy Mob folder"
 	
 	IF [!getfolder!] EQU [] (
 		call :colorecho "Folder selection canceled" darkyellow black
@@ -118,7 +156,7 @@ IF ERRORLEVEL 3 (
 		set "filepath=%%~dpf"
 	)
 	
-	FOR %%e IN (".upk" ".umap" ".zip" ".7z" ".rar") DO (
+	FOR %%e IN (".upk" ".umap" ".zip" ".rar" ".7z") DO (
 		IF /I %%e EQU "!ext!" (
 			set "ext=%%e"
 			set "ext=!ext:"=!"
@@ -131,8 +169,8 @@ IF ERRORLEVEL 3 (
 	goto choice
 	
 	:validext
-	set "name=!modname!"
-	set /P "name=Type a name for the mod (default: !modname!): "
+	set "name=!modname:~0,30!"
+	set /P "name=Type a name for the mod (default: !name!, max 30 chars): "
 	
 	REM checks if there's the mod
 	IF EXIST "!MODFOLDER!!name!\" (
@@ -142,6 +180,12 @@ IF ERRORLEVEL 3 (
 	REM checks if there's the mod, but installed
 	IF EXIST "!MODFOLDER!!name! (Installed)\" (
 		call :colorecho "Mod !name! already exists" darkred black
+		goto validext
+	)
+	REM checks the string length
+	REM https://ss64.com/nt/syntax-strlen.html
+	IF NOT "!name:~31,1!" EQU "" (
+		call :colorecho "The !name! is too long" darkred black
 		goto validext
 	)
 	
@@ -165,27 +209,52 @@ IF ERRORLEVEL 3 (
 		copy "!filepath!!filename!" "!MODFOLDER!!modname!\!filename!" /b /y >nul 2>&1
 		
 		echo Creating description.txt
-		echo Mod !modname! contains !filename!, created with Mod Installer > "!MODFOLDER!!modname!\description.txt"
+		echo Mod !modname! contains !filename!, created with Mod Creator > "!MODFOLDER!!modname!\description.txt"
 		
 		call :colorecho "Mod !modname! installed successfully" darkgreen black
 	) ELSE (
 		echo Extracting !ext! mod into "!modname!"
 		
-		call :extactfile "!filepath!!filename!" "!MODFOLDER!!modname!\"
-		IF ERRORLEVEL 3 (
+		call :extractfile "!filepath!!filename!" "!MODFOLDER!!modname!\"
+		IF ERRORLEVEL 4 (
+			call :colorecho "Unknown error" darkred black
+		) ELSE IF ERRORLEVEL 3 (
 			call :colorecho "No suitable extraction program found" darkred black
 		) ELSE IF ERRORLEVEL 2 (
 			call :colorecho "File extraction failed" darkred black
 		) ELSE IF ERRORLEVEL 1 (
-			call :colorecho "!ext! file not fount" darkred black
+			call :colorecho "!ext! file not found" darkred black
 		) ELSE (
+			echo Mod "!modname!" extracted successfully, moving all files out of subfolders
+			call :flattenfolder "!MODFOLDER!!modname!\"
 			REM creates the description file, if none is provided
 			IF NOT EXIST "!MODFOLDER!!modname!\description.txt" (
 				echo Creating description.txt
-				echo Mod !modname! created with Mod Installer > "!MODFOLDER!!modname!\description.txt"
+				echo Mod !modname! created with Mod Creator > "!MODFOLDER!!modname!\description.txt"
 			)
 			
 			call :colorecho "Mod !modname! installed successfully" darkgreen black
+			
+			REM shoves the entire file into stdout
+			IF EXIST "!MODFOLDER!!modname!\readme.txt" (
+				echo.
+				call :colorecho "== README ==" black gray
+				type "!MODFOLDER!!modname!\readme.txt"
+				REM empty echo for newline :/
+				echo.
+				call :colorecho "== README END ==" black gray
+				echo.
+			)
+			
+			IF NOT "!GAMEMODFOLDER!" EQU "" (
+				call :line
+				echo|set /p="Install mod to the game? "
+				choice /c:ny /n /m "[Y]es | [N]o "
+				IF ERRORLEVEL 2 (
+					call :colorecho "Applying mod !modname!" darkyellow black
+					call :modgame "!modname!" "!GAMEMODFOLDER!" "!MODFOLDER!"
+				)
+			)
 		)
 	)
 	
@@ -237,7 +306,7 @@ REM %1 = message, %2 = text color, %3 = background color, %4 = extra arguments (
 REM https://www.petri.com/change-powershell-console-font-and-background-colors
 setlocal EnableDelayedExpansion
 
-powershell -NoProfile -Noninteractive -NoLogo Write-Host %1 -ForegroundColor %2 -BackgroundColor %3 %4
+powershell -NoProfile -Noninteractive -NoLogo Write-Host ""%1"" -ForegroundColor %2 -BackgroundColor %3 %4
 
 goto :eof
 
@@ -295,7 +364,7 @@ setlocal EnableDelayedExpansion
 
 REM https://stackoverflow.com/a/50115044
 REM fix for dialog not showing: https://stackoverflow.com/q/216710
-set cmd=powershell -NoProfile -Noninteractive -NoLogo -command "&{[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms')|Out-Null; $F = New-Object System.Windows.Forms.OpenFileDialog; $F.ShowHelp = $true; $F.filter = 'ZIP Archive (*.zip)| *.zip|7-Zip Archive (*.7z)| *.7z|Rar Archive (*.rar)| *.rar|UPK File (*.upk)| *.upk|UMAP File (*.umap)| *.rar|All files| *.*'; $F.ShowDialog()|Out-Null; $F.FileName}"
+set cmd=powershell -NoProfile -Noninteractive -NoLogo -command "&{[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms')|Out-Null; $F = New-Object System.Windows.Forms.OpenFileDialog; $F.ShowHelp = $true; $F.filter = 'ZIP Archive (*.zip)| *.zip|Rar Archive (*.rar)| *.rar|7z Archive (*.7z)| *.7z|UPK File (*.upk)| *.upk|UMAP File (*.umap)| *.rar|All files| *.*'; $F.ShowDialog()|Out-Null; $F.FileName}"
 
 for /f "delims=" %%i in ('!cmd!') do (
 	set "file=%%i"
@@ -335,47 +404,143 @@ IF "!folder!" EQU "" (
 endlocal & set "getfolder=%folder%"
 goto :eof
 
-:extactfile
-REM extracts the file with 7-zip or winrar, whichever is available
+:extractfile
+REM extracts the file with whichever program is available
 REM %1 = file to extract, %2 = optional target for extraction
 REM exit: 0 = extracted, 1 = not found, 2 = failed, 3 = no program
-REM return: extraction target folder path (for error code 0)
+set "extractfile="
 setlocal EnableDelayedExpansion
-
-IF NOT EXIST %1 (
-	exit /b 1
-)
-
 set "folder=%~dp1"
 set "file=%~nx1"
 set "filename=%~n1"
 
+IF NOT EXIST "!folder!!file!" (
+	exit /b 1
+)
+
 set "target=%~dp2\"
-IF "!target!" EQU "" (
+IF "!target!" EQU "\" (
 	SET "target=!folder!!filename!\"
 )
 
 IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	REM https://stackoverflow.com/q/14122732
-	"%ProgramFiles%\7-Zip\7z.exe" e "!folder!!file!" -bd -y -o"!target!\" >nul 2>&1
-	IF ERRORLEVEL 1 (
-		endlocal & set "extactfile="
-		exit /b 2
-	) ELSE (
-		endlocal & set "extactfile=%target%"
-		exit /b 0
-	)
+	"%ProgramFiles%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\" >nul 2>&1
 ) ELSE IF EXIST "%ProgramFiles%\WinRAR\winrar.exe" (
 	REM https://stackoverflow.com/a/19337595
 	"%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\" >nul 2>&1
+) ELSE IF EXIST "%ProgramFiles%\winzip\wzzip.exe" (
+	REM http://kb.winzip.com/kb/entry/125/ - WZCLINE.CHM
+	"%ProgramFiles%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\" >nul 2>&1
+) ELSE (
+	exit /b 3
+)
+
+IF ERRORLEVEL 1 (
+	exit /b 2
+)
+
+endlocal & set "extractfile=!target!\"
+goto :eof
+
+
+:flattenfolder
+REM puts all files in the same folders and deletes empty folders
+REM %1 = folder to flatten
+REM exit: 0 = done, 1 = not found
+setlocal EnableDelayedExpansion
+
+set "folder=%1"
+set "folder=!folder:"=!\"
+
+IF NOT EXIST "!folder!" (
+	exit /b 1
+)
+
+REM https://superuser.com/a/746636
+REM moves all files to the same folder
+cd "!folder!"
+FOR /r %%f IN (*.*) DO (
+	move /Y "%%f" "!folder!" >nul 2>&1
 	IF ERRORLEVEL 1 (
-		endlocal & set "extactfile="
-		exit /b 2
-	) ELSE (
-		endlocal & set "extactfile=%target%"
-		exit /b 0
+		echo Could not move the file %%f
 	)
 )
 
-endlocal & set "extactfile="
-exit /b 3
+REM https://superuser.com/a/39679
+REM removes empty folders
+FOR /f "delims=" %%d IN ('dir /s /b /ad "!folder!"^| sort /r') DO (
+	rd "%%d" >nul 2>&1
+	IF ERRORLEVEL 1 (
+		echo Could not remove the folder %%d
+	)
+)
+
+goto :eof
+
+
+:modgame
+REM installs the mod into the game folder
+REM %1 = game folder, %2 = mod folder
+REM exit: 0 = done, 1 = error
+setlocal EnableDelayedExpansion
+
+set "mod=%1"
+set "mod=!mod:"=!"
+
+set "gamedrive=%~d2"
+set "gamefolder=%2"
+set "gamefolder=!gamefolder:"=!\"
+
+set "moddrive=%~d3"
+set "modfolder=%3"
+set "modfolder=!modfolder:"=!\"
+
+mkdir "!gamefolder!!mod!"
+IF ERRORLEVEL 1 (
+	call :colorecho "Could not create the folder !mod! in !gamefolder!" darkred black
+	exit /b 1
+)
+IF NOT EXIST "!gamefolder!!mod!" (
+	call :colorecho "Folder !mod! not found in !gamefolder!" darkred black
+	exit /b 1
+)
+
+IF "!gamedrive!" EQU "!moddrive!" (
+	REM if the drive isnt ntfs, it will give an error
+	fsutil fsinfo ntfsinfo !gamedrive! >nul 2>&1
+	IF NOT ERRORLEVEL 1 (
+		set "optimize=1"
+	)
+)
+	
+IF "!optimize!" EQU "1" (
+	IF EXIST "!modfolder!!mod!\*.upk" (
+		FOR /f "tokens=*" %%F in ('dir /b "!modfolder!!mod!\*.upk"') do (
+			mklink /h "!gamefolder!!mod!\%%F" "!modfolder!!mod!\%%F" >nul 2>&1
+		)
+	)
+	IF EXIST "!modfolder!!mod!\*.umap" (
+		FOR /f "tokens=*" %%F in ('dir /b "!modfolder!!mod!\*.umap"') do (
+			mklink /h "!gamefolder!!mod!\%%F" "!modfolder!!mod!\%%F" >nul 2>&1
+		)
+	)
+) ELSE (
+	call :colorecho "To save space, make sure that BnS and the BnSBuddy folder are in the same drive" darkyellow black
+
+	IF EXIST "!modfolder!!mod!\*.upk" (
+		xcopy "!modfolder!!mod!\*.upk" "!gamefolder!!mod!\" /i /s /q /y >nul 2>&1
+	)
+	IF EXIST "!modfolder!!mod!\*.umap" (
+		xcopy "!modfolder!!mod!\*.umap" "!gamefolder!!mod!\" /i /s /q /y >nul 2>&1
+	)
+)
+
+move "!modfolder!!mod!" "!modfolder!!mod! (Installed)" >nul 2>&1
+REM >nul 2>&1
+IF ERRORLEVEL 1 (
+	call :colorecho "Could not mark the !mod! as installed" darkred black
+	
+)
+
+goto :eof
