@@ -537,7 +537,6 @@ IF "!optimize!" EQU "1" (
 )
 
 move "!modfolder!!mod!" "!modfolder!!mod! (Installed)" >nul 2>&1
-REM >nul 2>&1
 IF ERRORLEVEL 1 (
 	call :colorecho "Could not mark the !mod! as installed" darkred black
 	
