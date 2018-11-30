@@ -483,7 +483,7 @@ goto :eof
 
 :modgame
 REM installs the mod into the game folder
-REM %1 = game folder, %2 = mod folder
+REM %1 = mod name, %2 = game folder, %3 = mod folder
 REM exit: 0 = done, 1 = error
 setlocal EnableDelayedExpansion
 
