@@ -158,10 +158,9 @@ IF ERRORLEVEL 4 (
 		set "filepath=%%~dpf"
 	)
 	
-	FOR %%e IN (".upk" ".umap" ".zip" ".rar" ".7z") DO (
-		IF /I %%e EQU "!ext!" (
+	FOR %%e IN (.upk .umap .zip .rar .7z) DO (
+		IF /I "%%e" EQU "!ext!" (
 			set "ext=%%e"
-			set "ext=!ext:"=!"
 			goto validext
 		)
 	)
@@ -515,26 +514,21 @@ IF /I "!gamedrive!" EQU "!moddrive!" (
 		set "optimize=1"
 	)
 )
-	
-IF "!optimize!" EQU "1" (
-	IF EXIST "!modfolder!!mod!\*.upk" (
-		FOR /f "tokens=*" %%F in ('dir /b "!modfolder!!mod!\*.upk"') do (
-			mklink /h "!gamefolder!!mod!\%%F" "!modfolder!!mod!\%%F" >nul 2>&1
-		)
-	)
-	IF EXIST "!modfolder!!mod!\*.umap" (
-		FOR /f "tokens=*" %%F in ('dir /b "!modfolder!!mod!\*.umap"') do (
-			mklink /h "!gamefolder!!mod!\%%F" "!modfolder!!mod!\%%F" >nul 2>&1
-		)
-	)
-) ELSE (
-	call :colorecho "To save space, make sure that BnS and the BnSBuddy folder are in the same drive" darkyellow black
 
-	IF EXIST "!modfolder!!mod!\*.upk" (
-		xcopy "!modfolder!!mod!\*.upk" "!gamefolder!!mod!\" /i /s /q /y >nul 2>&1
-	)
-	IF EXIST "!modfolder!!mod!\*.umap" (
-		xcopy "!modfolder!!mod!\*.umap" "!gamefolder!!mod!\" /i /s /q /y >nul 2>&1
+IF NOT "!optimize!" EQU "1" (
+	call :colorecho "To save space, make sure that BnS and the BnSBuddy folder are in the same drive" darkyellow black
+)
+
+FOR %%e IN (.upk .umap) DO (
+	set "ext=%%e"
+	IF EXIST "!modfolder!!mod!\*!ext!" (
+		IF "!optimize!" EQU "1" (
+			FOR /f "tokens=*" %%F in ('dir /b "!modfolder!!mod!\*!ext!"') do (
+				mklink /h "!gamefolder!!mod!\%%F" "!modfolder!!mod!\%%F" >nul 2>&1
+			)
+		) ELSE (
+			xcopy "!modfolder!!mod!\*.!ext!" "!gamefolder!!mod!\" /i /s /q /y >nul 2>&1
+		)
 	)
 )
 
