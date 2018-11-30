@@ -15,10 +15,12 @@ REM needs administrator rights - https://stackoverflow.com/a/21295806
 REM we run fsutil to check the error code. 0 = admin
 fsutil dirty query %SystemDrive% >nul 2>&1
 IF NOT %ERRORLEVEL% EQU 0 (
+	REM find a method to keep this running in the same window
 	powershell -NoProfile -Noninteractive -NoLogo Start-Process ""%0"" -Verb runas >nul 2>&1
 	IF ERRORLEVEL 1 (
 		call :kill 1 "You need to execute as administrator"
 	) ELSE (
+		REM leave the current non-admin copy of the batch
 		exit /b 0
 	)
 )
@@ -68,7 +70,7 @@ IF ERRORLEVEL 1 (
 	for /f "tokens=2*" %%a in ('REG QUERY !REGKEY! /v BaseDir') do set "REGFOLDER=%%~b"
 
 	IF NOT EXIST "!REGFOLDER!" (
-		call :colorecho "!MODFOLDER! does not exist or is empty" red black
+		call :colorecho "!REGFOLDER! does not exist or is empty" red black
 	)
 )
 
@@ -506,7 +508,7 @@ IF NOT EXIST "!gamefolder!!mod!" (
 	exit /b 1
 )
 
-IF "!gamedrive!" EQU "!moddrive!" (
+IF /I "!gamedrive!" EQU "!moddrive!" (
 	REM if the drive isnt ntfs, it will give an error
 	fsutil fsinfo ntfsinfo !gamedrive! >nul 2>&1
 	IF NOT ERRORLEVEL 1 (
@@ -539,7 +541,6 @@ IF "!optimize!" EQU "1" (
 move "!modfolder!!mod!" "!modfolder!!mod! (Installed)" >nul 2>&1
 IF ERRORLEVEL 1 (
 	call :colorecho "Could not mark the !mod! as installed" darkred black
-	
 )
 
 goto :eof
