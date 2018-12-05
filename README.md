@@ -19,10 +19,10 @@ Automatically creates a mod folder for .upk or .umap files.
 1. Download the mods you need
     You can download mods in https://www.bnsbuddy.com/, https://www.reddit.com/r/BladeAndSoulMods/ or https://www.nexusmods.com/bladeandsoul/
 2. Download the `mod_installer.bat` file
-3. Right-click and click on "Run as Administrator" (or similar for your language)
+3. Right-click and click on "Run as Administrator" (or similar for your language).<br>
     Update: automatically forces to start as Administrator.
 4. Press M to pick a folder to install the mod into, or press I to install the mod
-5. If BnSBuddy is open, refresh the "Mod Manager" list and install the mod
+5. If BnSBuddy is open, refresh the "Mod Manager" list and install the mod<br>
     Update: you may install with the tool as well
 
 ## How to revert?
