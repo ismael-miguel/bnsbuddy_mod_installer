@@ -32,15 +32,12 @@ IF EXIST "%~dp0/Settings.ini" (
 		set "key=%%a"
 		
 		IF "!key!" EQU "modfolder " (
-			REM set "MODFOLDER=!value: =!"
-			set "MODFOLDER=!value!"
+			set "MODFOLDER=!value!\"
 		) ELSE IF "!key!" EQU "customgamepath " (
-			REM set "GAMEFOLDER=!value: =!"
 			set "GAMEFOLDER=!value!"
 			set "GAMEMODFOLDER=!GAMEFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC\mod"
 		) ELSE IF "!key!" EQU "default " (
 			IF NOT "!value!" EQU "" (
-				REM set "GAMEFOLDER=!value: =!"
 				set "GAMEFOLDER=!value!"
 				set "GAMEMODFOLDER=!GAMEFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC\mod"
 			)
