@@ -32,7 +32,14 @@ IF EXIST "%~dp0/Settings.ini" (
 		set "key=%%a"
 		
 		IF "!key!" EQU "modfolder " (
-			set "MODFOLDER=!value!\"
+			REM bnsbuddy adds \CookedPC_mod\ to the saved path
+			set "MODFOLDER=!value!\CookedPC_mod\"
+		) ELSE IF "!key!" EQU "modfolderset " (
+			REM removes the setting if the mod folder is not set
+			REM "bug" in bnsbuddy, but have workarounds
+			IF "!value!" EQU "false" (
+				set "MODFOLDER="
+			)
 		) ELSE IF "!key!" EQU "customgamepath " (
 			set "GAMEFOLDER=!value!"
 			set "GAMEMODFOLDER=!GAMEFOLDER!\contents\Local\NCWEST\ENGLISH\CookedPC\mod"
