@@ -514,18 +514,18 @@ IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
 	set "CMD="%ProgramFiles%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
 ) ELSE IF EXIST "%ProgramFiles%\WinRAR\winrar.exe" (
 	REM https://stackoverflow.com/a/19337595
-	set "CMD=""%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
+	set "CMD="%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
 ) ELSE IF EXIST "%ProgramFiles%\winzip\wzzip.exe" (
 	REM http://kb.winzip.com/kb/entry/125/ - WZCLINE.CHM
-	set "CMD=""%ProgramFiles%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
+	set "CMD="%ProgramFiles%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
 ) ELSE IF !WIN_BITS! EQU 64 (
 	REM if on 64 bits, check if 32 bits versions are installed
 	IF EXIST "%ProgramFiles(x86)%\7-Zip\7z.exe" (
-		set "CMD=""%ProgramFiles(x86)%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
+		set "CMD="%ProgramFiles(x86)%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
 	) ELSE IF EXIST "%ProgramFiles(x86)%\WinRAR\winrar.exe" (
-		set "CMD=""%ProgramFiles(x86)%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
+		set "CMD="%ProgramFiles(x86)%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
 	) ELSE IF EXIST "%ProgramFiles(x86)%\winzip\wzzip.exe" (
-		set "CMD=""%ProgramFiles(x86)%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
+		set "CMD="%ProgramFiles(x86)%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
 	)
 )
 
