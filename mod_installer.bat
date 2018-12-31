@@ -494,17 +494,22 @@ IF NOT EXIST "!folder!!file!" (
 	exit /b 1
 )
 
-set "target=%~dp2\"
-IF "!target!" EQU "\" (
+set "target=%~dp2"
+IF "!target!" EQU "" (
 	SET "target=!folder!!filename!\"
 )
 
-set "LOG=%~dpnx3"
+REM set "LOG=%~dpnx3"
+REM https://codereview.stackexchange.com/questions/208756/function-to-extract-a-file-in-batch#comment405176_208756
+IF "%~3" EQU "" (
+	set "LOG=nul"
+) else (
+	set "LOG="%~dpnx3""
+)
+
 set "CMD="
 
-IF "!LOG!" NEQ "" (
-	echo === COMPRESSED FILE EXTRACTION === >> "!LOG!"
-)
+echo === COMPRESSED FILE EXTRACTION === >> !LOG!
 
 REM yeah, not pretty, but the %ProgramFiles(x86)% causes syntax errors
 FOR %%d IN ("%ProgramFiles%" "%ProgramFiles(x86)%") DO IF "!CMD!" EQU "" (
@@ -525,33 +530,24 @@ FOR %%d IN ("%ProgramFiles%" "%ProgramFiles(x86)%") DO IF "!CMD!" EQU "" (
 )
 
 IF "!CMD!" EQU "" (
-	IF "!LOG!" NEQ "" (
-		echo Error 3: Extraction failed, no program found >> "!LOG!"
-		echo === COMPRESSED FILE EXTRACTION FINISHED === >> "!LOG!"
-	)
+	echo Error 3: Extraction failed, no program found >> !LOG!
+	echo === COMPRESSED FILE EXTRACTION FINISHED === >> !LOG!
+	
 	exit /b 3
 )
 
-IF "!LOG!" NEQ "" (
-	echo Extracting using command: >> "!LOG!"
-	echo !CMD! >> "!LOG!"
-	
-	call !CMD! >> "!LOG!" 2>&1
-) ELSE (
-	call !CMD! >nul 2>&1
-)
+echo Extracting using command: >> !LOG!
+echo !CMD! >> !LOG!
+call !CMD! >> !LOG! 2>&1
 
 IF ERRORLEVEL 1 (
-	IF "!LOG!" NEQ "" (
-		echo Error 2: Extraction failed with error %ERRORLEVEL% >> "!LOG!"
-		echo === COMPRESSED FILE EXTRACTION FINISHED === >> "!LOG!"
-	)
+	echo Error 2: Extraction failed with error %ERRORLEVEL% >> !LOG!
+	echo === COMPRESSED FILE EXTRACTION FINISHED === >> !LOG!
+	
 	exit /b 2
 )
 
-IF "!LOG!" NEQ "" (
-	echo === COMPRESSED FILE EXTRACTION FINISHED === >> "!LOG!"
-)
+echo === COMPRESSED FILE EXTRACTION FINISHED === >> !LOG!
 
 endlocal & set "extractfile=!target!\"
 goto :eof
