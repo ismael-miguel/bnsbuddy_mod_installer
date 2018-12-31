@@ -37,6 +37,9 @@ IF ERRORLEVEL 1 (
 echo !LOGLINE! > !LOG!
 echo BnSBuddy mod installer - Starting up >> !LOG!
 echo !LOGLINE! >> !LOG!
+echo Cpu architecture: %PROCESSOR_ARCHITECTURE% >> !LOG!
+echo ProgramFiles: %ProgramFiles%\ >> !LOG!
+echo ProgramFiles x86: %ProgramFiles(x86)%\ >> !LOG!
 
 REM tries to load the settings.ini file and get the custom mod path
 IF EXIST "%~dp0/Settings.ini" (
@@ -496,12 +499,6 @@ IF "!target!" EQU "\" (
 	SET "target=!folder!!filename!\"
 )
 
-set WIN_BITS=32
-echo %PROCESSOR_ARCHITECTURE% | find /i "x86" >nul
-IF ERRORLEVEL 1 (
-	set WIN_BITS=64
-)
-
 set "LOG=%~dpnx3"
 set "CMD="
 
@@ -509,23 +506,21 @@ IF "!LOG!" NEQ "" (
 	echo === COMPRESSED FILE EXTRACTION === >> "!LOG!"
 )
 
-IF EXIST "%ProgramFiles%\7-Zip\7z.exe" (
-	REM https://stackoverflow.com/q/14122732
-	set "CMD="%ProgramFiles%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
-) ELSE IF EXIST "%ProgramFiles%\WinRAR\winrar.exe" (
-	REM https://stackoverflow.com/a/19337595
-	set "CMD="%ProgramFiles%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
-) ELSE IF EXIST "%ProgramFiles%\winzip\wzzip.exe" (
-	REM http://kb.winzip.com/kb/entry/125/ - WZCLINE.CHM
-	set "CMD="%ProgramFiles%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
-) ELSE IF !WIN_BITS! EQU 64 (
-	REM if on 64 bits, check if 32 bits versions are installed
-	IF EXIST "%ProgramFiles(x86)%\7-Zip\7z.exe" (
-		set "CMD="%ProgramFiles(x86)%\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
-	) ELSE IF EXIST "%ProgramFiles(x86)%\WinRAR\winrar.exe" (
-		set "CMD="%ProgramFiles(x86)%\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
-	) ELSE IF EXIST "%ProgramFiles(x86)%\winzip\wzzip.exe" (
-		set "CMD="%ProgramFiles(x86)%\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
+REM yeah, not pretty, but the %ProgramFiles(x86)% causes syntax errors
+FOR %%d IN ("%ProgramFiles%" "%ProgramFiles(x86)%") DO IF "!CMD!" EQU "" (
+	set "DIR=%%d"
+	IF "!DIR!" NEQ "" (
+		set "DIR=!DIR:"=!"
+		IF EXIST "!DIR!\7-Zip\7z.exe" (
+			REM https://stackoverflow.com/q/14122732
+			set "CMD="!DIR!\7-Zip\7z.exe" x "!folder!!file!" -bd -y -o"!target!\""
+		) ELSE IF EXIST "!DIR!\WinRAR\winrar.exe" (
+			REM https://stackoverflow.com/a/19337595
+			set "CMD="!DIR!\WinRAR\winrar.exe" x -ibck "!folder!!file!" *.* "!target!\""
+		) ELSE IF EXIST "!DIR!\winzip\wzzip.exe" (
+			REM http://kb.winzip.com/kb/entry/125/ - WZCLINE.CHM
+			set "CMD="!DIR!\winzip\wzzip.exe" -d "!folder!!file!" "!target!\""
+		)
 	)
 )
 
